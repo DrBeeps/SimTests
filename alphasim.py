@@ -11,6 +11,8 @@ mass = 0.6095
 mmoi = 0.09452292736
 avgThrust = 15
 
+radius = 0.033 # meters
+
 xAccel = 0
 YAccel = 0
 ZAccel = 0
@@ -18,6 +20,10 @@ ZAccel = 0
 yaw = 0 # Z
 pitch = 0 # Y
 roll = 0 # X
+
+oriZ = 12
+oriY = 0
+oriX = 0
 
 # TVC PARAMS #
 tvcMax = 5
@@ -31,66 +37,84 @@ tvcZOut = 0
 tvcYOut = 0
 
 # PID PARAMS #
+Setpoint = 0
 Kp = 0.12
-ki = 0.01
-kD = 0.08
+Ki = 0.08
+Kd = 0.115
 
 # MOTOR THRUST ARRAY #
 F15 = np.array([12.50, 25.00, 16.50, 15.25, 15.00, 14.50, 14.50, 14.25, 14.00, 13.00, 13.00])
+F = 15 # N
 
-plt.plot(F15)
-plt.ylabel("F15 Motor Thrust Curve")
-plt.show()
+class PID(object):
+    def __init__(self, _Setpoint):
+        self._Setpoint = _Setpoint
+        self.Error = 0
+        self.pError = 0
+        self.iError = 0
+        self.dError = 0
+        self.previousError = 0
+        self.PIDOut = 0
+        # Time
+        self.dt = 0.065
 
-def PID(self, Input, Setpoint):
-    self.Error - self.Setpoint - Input
-    self.pError = self.Error
-    self.iError = self.Error * self.dt
-    self.dError = (self.Error - self.previousError) / self.dt
+    def compute(self, Input):
+        self.Input = Input
 
-    PIDOut = (self.pError * Kp) + (self.iError * Ki) + (self.dError * Kd)
-    return PIDOut
+        self.Error = self._Setpoint - Input 
+        self.pError = self.Error
+        self.iError = self.Error * self.dt
+        self.dError = (self.Error - self.previousError) / self.dt
 
-
-def ChangeSetpoint(self, target, timeStep):
-    PIDError = target - self.Setpoint
-    PIDSpeed = self.SetpointRate * timeStep
-    PIDError = clamp(PIDError, -PIDSPeed, PIDSpeed)
-    self.Setpoint += PIDError
+        PIDOut = (self.pError * Kp) + (self.iError * Ki) + (self.dError * Kd)
+        return PIDOut
 
 
-def reset(self):
-    self.pError = 0.0
-    self.iError = 0.0
-    self.dError = 0.0
-    self.previousError = 0.0
-    self.Error = 0.0
+    def ChangeSetpoint(self, target, timeStep):
+        PIDError = target - self._Setpoint
+        PIDSpeed = self.SetpointRate * timeStep
+        PIDError = clamp(PIDError, -PIDSPeed, PIDSpeed)
+        self._Setpoint += PIDError
+
+
+    def reset(self):
+        self.pError = 0.0
+        self.iError = 0.0
+        self.dError = 0.0
+        self.previousError = 0.0
+        self.Error = 0.0
 
 
 class Simulation(object):
     def __init__(self):
-
+        pass
     def loop(self):
+        pass
         
 class Rocket(object):
-    def __init__(self):
-        global Rocket
-        
+    def __init__(self, pX, pY, pZ, vX, vY, vZ, fX, fY, fZ):
+        pass
     
+    def findPos(self, Force, posX, posY, posZ):
+
+        
+tvcZ = PID(Setpoint)
+tvcY = PID(Setpoint)
 
 # TVC Mount Angle
-tvcZPIDOut = 
-
+tvcZPIDOut = tvcZ.compute(oriZ)
 
 # tvcXPIDOutput = tvcXPID.update(rocketOrientationX);
 # tvcX.update(asin(tvcXPIDOutput / (measuredForce / whateverTheRadiusOfYourMountIs)));
 
 
 # Torque
+tvcZTorque = math.asin(tvcZPIDOut / (F / radius))
+print(str(tvcZTorque) + " Nm")
+
 # Angular Accel
 # Angular Velocity
 # Angle
-
 # Force
 # Linear Acceleration
 # Velocity
