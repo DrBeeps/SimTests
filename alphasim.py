@@ -17,6 +17,8 @@ xAccel = 0
 YAccel = 0
 ZAccel = 0
 
+gravity = [-9.8, 0.0, 0.0]
+
 yaw = 0 # Z
 pitch = 0 # Y
 roll = 0 # X
@@ -28,7 +30,7 @@ oriX = 0
 # TVC PARAMS #
 tvcMax = 5
 tvcDegS = 12.5 # deg/s
-tvcCOM = 0.4
+tvcMomentArm = 0.4 # COM to TVC dist
 
 tvcZPIDOut = 0
 tvcYPIDOut = 0
@@ -71,10 +73,10 @@ class PID(object):
 
 
     def ChangeSetpoint(self, target, timeStep):
-        PIDError = target - self._Setpoint
+        self.Error = target - self._Setpoint
         PIDSpeed = self.SetpointRate * timeStep
-        PIDError = clamp(PIDError, -PIDSPeed, PIDSpeed)
-        self._Setpoint += PIDError
+        self.Error = clamp(self.Error, -PIDSPeed, PIDSpeed)
+        self._Setpoint += self.Error
 
 
     def reset(self):
@@ -92,10 +94,52 @@ class Simulation(object):
         pass
         
 class Rocket(object):
-    def __init__(self, pX, pY, pZ, vX, vY, vZ, fX, fY, fZ):
-        pass
+    def __init__(self, pX, pY, pZ, vX, vY, vZ, fX, fY, fZ, _mass, tvcZAngle, tvcYAngle, _tvcMomentArm):
+        self.pX = pX
+        self.pY = pY
+        self.pZ = pZ
+        self.vX = vX
+        self.vY = vY
+        self.vZ = vZ
+        self.fX = fX
+        self.fY = fY
+        self.fZ = fZ
+        self._mass = _mass
+        self.tvcZAngle = tvcZAngle
+        self.tvcYAngle = tvcYAngle
     
-    def findPos(self, Force, posX, posY, posZ):
+    def calcForce(self):
+        self.tvcZAngle *= math.pi / 180 # degrees to radians
+        self.tvcYAngle *= math.pi / 180
+
+        self.tvcZAngle = math.sin(self.tvcZAngle) * F
+        self.tvcYAngle = math.cos(self.tvcYAngle) * F
+        return tvcZAngle * 180 / math.pi
+
+    def updatePhysics(self, dt):
+        self.dt = dt
+
+        self.fX += self.fZ * gravity[0]
+        self.fY += self.fY * gravity[1]
+        self.fZ += self.fX * gravity[2]
+
+        # apply motor thrust to force vector here?
+
+        self.vX += self.fX / self._mass * self.dt
+        self.vY += self.fY / self._mass * self.dt
+        self.vZ += self.fZ / self._mass * self.dt
+
+        self.pX += self.vX * self.dt
+        self.pY += self.vY * self.dt
+        self.pZ += self.vZ * self.dt
+        
+    def getPX(self):
+        return self.pX
+    def getPY(self):
+        return self.pY
+    def getPZ(self):
+        return self.pZ
+
 
         
 tvcZ = PID(Setpoint)
@@ -103,6 +147,14 @@ tvcY = PID(Setpoint)
 
 # TVC Mount Angle
 tvcZPIDOut = tvcZ.compute(oriZ)
+tvcYPIDOut = tvcY.compute(oriY)
+
+# Rocket Physics
+testRocket = Rocket(0, 0, 0, 0, 0, 0, 0, 0, 1, mass, tvcZPIDOut, tvcYPIDOut, tvcMomentArm)
+
+testRocket.updatePhysics(0.065)
+# print(str(testRocket.getPX()) + " " + str(testRocket.getPY()) + " " + str(testRocket.getPZ()))
+print(testRocket.calcForce())
 
 # tvcXPIDOutput = tvcXPID.update(rocketOrientationX);
 # tvcX.update(asin(tvcXPIDOutput / (measuredForce / whateverTheRadiusOfYourMountIs)));
@@ -110,9 +162,13 @@ tvcZPIDOut = tvcZ.compute(oriZ)
 
 # Torque
 tvcZTorque = math.asin(tvcZPIDOut / (F / radius))
-print(str(tvcZTorque) + " Nm")
+# print(str(tvcZTorque) + " Nm")
+
+
 
 # Angular Accel
+
+
 # Angular Velocity
 # Angle
 # Force
